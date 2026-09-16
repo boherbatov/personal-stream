@@ -25,7 +25,7 @@ async function syncTelegram(){if(!TELEGRAM_BOT_TOKEN)return;const response=await
 
 async function api(req,res,url){
   if(req.method==='GET'&&url.pathname==='/api/config')return json(res,200,{accessRequired:Boolean(APP_ACCESS_KEY),telegram:{enabled:Boolean(TELEGRAM_BOT_TOKEN),mode:'bot',officialApi:TELEGRAM_API_BASE==='https://api.telegram.org'}});
-  if(req.method==='GET'&&url.pathname==='/api/session')return json(res,200,{connected:Boolean(getSession(req))});
+  if(req.method==='GET'&&url.pathname==='/api/session')return json(res,200,{connected:!APP_ACCESS_KEY||Boolean(getSession(req))});
   if(req.method==='POST'&&url.pathname==='/api/session'){
     const {accessKey}=await bodyJson(req);if(APP_ACCESS_KEY&&accessKey!==APP_ACCESS_KEY)return json(res,401,{error:'wrong_access_key'});
     const sid=randomBytes(24).toString('base64url');sessions.set(sid,{expiresAt:Date.now()+SESSION_TTL_MS});
@@ -33,13 +33,13 @@ async function api(req,res,url){
   }
   if(req.method==='DELETE'&&url.pathname==='/api/session'){const sid=cookies(req).stream_session;if(sid)sessions.delete(sid);return json(res,200,{ok:true},{'set-cookie':'stream_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0'});}
   if(req.method==='GET'&&url.pathname==='/api/library'){
-    if(!getSession(req))return json(res,401,{error:'not_connected'});if(!TELEGRAM_BOT_TOKEN)return json(res,503,{error:'telegram_not_configured'});await syncTelegram();
+    if(APP_ACCESS_KEY&&!getSession(req))return json(res,401,{error:'not_connected'});if(!TELEGRAM_BOT_TOKEN)return json(res,503,{error:'telegram_not_configured'});await syncTelegram();
     const selected=url.searchParams.get('chatId');const chats=[...telegramState.chats].map(([id,chat])=>({id,title:chat.title,count:chat.items.size}));const items=selected&&telegramState.chats.get(selected)?[...telegramState.chats.get(selected).items.values()]:[];
     return json(res,200,{chats,selectedChatId:selected||null,items,officialApiLimitBytes:TELEGRAM_API_BASE==='https://api.telegram.org'?20_000_000:null});
   }
   const streamMatch=url.pathname.match(/^\/api\/stream\/telegram\/([A-Za-z0-9_-]+)$/);
   if(req.method==='GET'&&streamMatch){
-    if(!getSession(req))return json(res,401,{error:'not_connected'});if(!TELEGRAM_BOT_TOKEN)return json(res,503,{error:'telegram_not_configured'});
+    if(APP_ACCESS_KEY&&!getSession(req))return json(res,401,{error:'not_connected'});if(!TELEGRAM_BOT_TOKEN)return json(res,503,{error:'telegram_not_configured'});
     const fileResponse=await telegramApi('getFile',{file_id:streamMatch[1]});if(!fileResponse.ok)return json(res,502,{error:'telegram_file_error'});const fileData=await fileResponse.json();if(!fileData.ok||!fileData.result?.file_path)return json(res,404,{error:'telegram_file_missing'});
     const upstream=await fetch(`${TELEGRAM_API_BASE}/file/bot${TELEGRAM_BOT_TOKEN}/${fileData.result.file_path}`,{headers:req.headers.range?{range:req.headers.range}:{}});if(!upstream.ok&&upstream.status!==206)return json(res,upstream.status,{error:'telegram_stream_error'});
     const pass={'cache-control':'private, no-store'};for(const key of ['content-type','content-length','content-range','accept-ranges']){const value=upstream.headers.get(key);if(value)pass[key]=value;}res.writeHead(upstream.status,pass);if(upstream.body)for await(const chunk of upstream.body)res.write(chunk);return res.end();
