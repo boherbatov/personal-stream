@@ -1,0 +1,52 @@
+name: Build TeleFlow v0.4 testing APK
+on:
+  workflow_dispatch:
+    inputs:
+      source_url:
+        description: 'Reviewed source archive URL (release asset)'
+        required: true
+      source_sha256:
+        description: 'SHA-256 of the source archive'
+        required: true
+      release_tag:
+        description: 'Target release tag for the APK upload'
+        required: true
+        default: 'teleflow-v0.4.0-test'
+      apk_name:
+        description: 'APK asset file name'
+        required: true
+        default: 'TeleFlow-v0.4-arm64-testing.apk'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download reviewed source archive
+        run: curl -fL -o source.zip "${{ inputs.source_url }}"
+      - name: Verify source archive
+        run: echo "${{ inputs.source_sha256 }}  source.zip" | sha256sum -c -
+      - name: Extract and configure build
+        run: |
+          mkdir src && unzip -q source.zip -d src
+          printf '%s\n' 'org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8' 'android.useAndroidX=true' 'kotlin.code.style=official' 'kotlin.compiler.execution.strategy=in-process' 'org.gradle.workers.max=1' > src/gradle.properties
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Build with repository secrets
+        working-directory: src
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+          TELEFLOW_KEYSTORE_B64: ${{ secrets.TELEFLOW_KEYSTORE_B64 }}
+          TELEFLOW_KEYSTORE_PASS: ${{ secrets.TELEFLOW_KEYSTORE_PASS }}
+        run: chmod +x gradlew && ./gradlew --no-daemon --max-workers=1 assembleRelease
+      - name: Rename and checksum
+        run: cp src/app/build/outputs/apk/release/app-release.apk "${{ inputs.apk_name }}" && sha256sum "${{ inputs.apk_name }}" > "${{ inputs.apk_name }}.sha256"
+      - name: Upload to testing release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: boherbatov/personal-stream
+        run: gh release upload "${{ inputs.release_tag }}" "${{ inputs.apk_name }}" "${{ inputs.apk_name }}.sha256" --clobber
