@@ -17,10 +17,10 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
       - name: Build with repository secrets
         working-directory: src
         env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
           TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
           TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
         run: chmod +x gradlew && ./gradlew --no-daemon --max-workers=1 assembleRelease
