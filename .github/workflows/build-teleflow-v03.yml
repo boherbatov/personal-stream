@@ -1,0 +1,32 @@
+name: Build TeleFlow v0.3 testing APK
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download reviewed source archive
+        run: curl -fL -o source.zip "https://github.com/boherbatov/personal-stream/releases/download/teleflow-v0.3.0-test/3-TeleFlow-Android-v0.3-source.zip"
+      - name: Verify source archive
+        run: echo "1a984c6ecc0dc9d16cf15e6777c60e2a0297762f35187e4e72402d4e3f103181  source.zip" | sha256sum -c -
+      - name: Extract
+        run: mkdir src && unzip -q source.zip -d src
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Build with repository secrets
+        working-directory: src
+        env:
+          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
+        run: chmod +x gradlew && ./gradlew --no-daemon --max-workers=1 assembleRelease
+      - name: Rename and checksum
+        run: cp src/app/build/outputs/apk/release/app-release.apk TeleFlow-v0.3-arm64-testing.apk && sha256sum TeleFlow-v0.3-arm64-testing.apk > TeleFlow-v0.3-arm64-testing.apk.sha256
+      - name: Upload to testing release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload teleflow-v0.3.0-test TeleFlow-v0.3-arm64-testing.apk TeleFlow-v0.3-arm64-testing.apk.sha256 --clobber
