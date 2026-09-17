@@ -11,9 +11,11 @@ jobs:
         run: curl -fL -o source.zip "https://github.com/boherbatov/personal-stream/releases/download/teleflow-v0.3.0-test/3-TeleFlow-Android-v0.3-source.zip"
       - name: Verify source archive
         run: echo "1a984c6ecc0dc9d16cf15e6777c60e2a0297762f35187e4e72402d4e3f103181  source.zip" | sha256sum -c -
-      - name: Extract
-        run: mkdir src && unzip -q source.zip -d src
-      - uses: actions/setup-java@v4
+      - name: Extract and configure build
+        run: |
+          mkdir src && unzip -q source.zip -d src
+          printf '%s\n' 'org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8' 'android.useAndroidX=true' 'kotlin.code.style=official' 'kotlin.compiler.execution.strategy=in-process' 'org.gradle.workers.max=1' > src/gradle.properties
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
