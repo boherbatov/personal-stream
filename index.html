@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0B141C"><title>TeleFlow Web</title><link rel="stylesheet" href="./app.css"><script type="module" src="./app.js"></script></head>
+<body>
+<header class="topbar"><a class="brand" href="#" aria-label="TeleFlow"><span class="logo">▶</span><span><b>TeleFlow</b><small>WEB</small></span></a><div id="status" class="status">לא מחובר</div><div class="head-actions"><button id="refresh" class="icon hidden" title="רענון">↻</button><button id="logout" class="icon hidden" title="יציאה">↪</button></div></header>
+<main>
+<section id="login" class="login-shell">
+  <div class="login-card">
+    <div class="hero-logo"><span>▶</span></div><p class="kicker">TELEFLOW WEB</p><h1 id="loginTitle">הסרטים שלך. בכל מסך.</h1><p id="loginSub">אותה ספרייה פרטית של TeleFlow, עכשיו ישירות בדפדפן. החיבור נעשה מול Telegram ונשאר במכשיר הזה בלבד.</p>
+    <div class="steps"><span id="stepCred" class="active">1</span><i></i><span id="stepPhone">2</span><i></i><span id="stepCode">3</span></div>
+    <form id="authForm">
+      <div id="credentialsFields"><label>API ID<input id="apiId" inputmode="numeric" autocomplete="off" placeholder="12345678" required></label><label>API Hash<input id="apiHash" autocomplete="off" placeholder="0123456789abcdef..." required></label></div>
+      <label id="authField" class="hidden"><span id="authLabel">מספר טלפון</span><input id="authInput" autocomplete="tel" placeholder="+972..."></label>
+      <p id="authError" class="error hidden"></p><button id="authButton" class="primary" type="submit">שמירת פרטים והמשך</button>
+    </form>
+    <details><summary>איפה מוצאים API ID ו-API Hash?</summary><p>נכנסים ל-<a href="https://my.telegram.org/apps" target="_blank" rel="noreferrer">my.telegram.org/apps</a>, יוצרים אפליקציה ומעתיקים את שני הערכים. הם נשמרים רק באחסון המקומי של הדפדפן.</p></details>
+  </div>
+  <div class="poster-wall" aria-hidden="true"><div class="poster p1"><span>TELEFLOW</span></div><div class="poster p2"><span>סדרות</span></div><div class="poster p3"><span>סרטים</span></div></div>
+</section>
+<section id="app" class="hidden">
+  <div class="hero"><div><p class="kicker">הספרייה הפרטית שלך</p><h1 id="welcome">מה בא לך לראות?</h1><p>בחר ערוץ, חפש, והמשך בדיוק מאיפה שעצרת.</p></div><button id="heroPlay" class="primary hidden">▶ המשך צפייה</button></div>
+  <div class="toolbar"><div id="channels" class="channels"></div><div class="filters"><label class="search">⌕<input id="search" type="search" placeholder="חיפוש בספרייה"></label><button id="allChip" class="chip active">הכול</button><button id="favChip" class="chip">מועדפים</button><select id="sort" aria-label="מיון"><option value="new">החדשים קודם</option><option value="old">הישנים קודם</option><option value="name">לפי שם</option><option value="size">לפי גודל</option></select></div></div>
+  <div id="loading" class="loading hidden"><span></span><p>סורק את הערוץ…</p><small id="loadingCount"></small></div>
+  <section id="continueSection" class="rail-section hidden"><div class="section-head"><h2>להמשיך לצפות</h2></div><div id="continueRail" class="rail"></div></section>
+  <section id="seriesSection" class="rail-section hidden"><div class="section-head"><h2>סדרות</h2></div><div id="seriesRail" class="rail"></div></section>
+  <section id="musicSection" class="rail-section hidden"><div class="section-head"><h2>מוזיקה</h2></div><div id="musicRail" class="music-rail"></div></section>
+  <section><div class="section-head"><h2 id="libraryTitle">הספרייה</h2><span id="count"></span></div><div id="grid" class="grid"></div><div id="empty" class="empty hidden">לא נמצא תוכן להצגה.</div></section>
+</section>
+</main>
+<dialog id="details"><button class="close" data-close>×</button><div id="detailPoster" class="detail-poster"><span>▶</span></div><div class="detail-copy"><p class="kicker">TELEFLOW</p><h2 id="detailTitle"></h2><p id="detailMeta" class="muted"></p><div class="detail-actions"><button id="play" class="primary">▶ צפייה עכשיו</button><button id="favorite" class="secondary">♡ מועדפים</button></div></div></dialog>
+<dialog id="player" class="player"><button class="close" data-player-close>×</button><video id="video" controls playsinline></video><div class="player-info"><h3 id="nowPlaying"></h3><span id="streamState"></span></div></dialog>
+<dialog id="episodes"><button class="close" data-episodes-close>×</button><h2 id="seriesTitle"></h2><div id="episodeList" class="episodes"></div></dialog>
+<audio id="audio" controls class="audio-player hidden"></audio><div id="toast" class="toast" role="status"></div>
+</body></html>
